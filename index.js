@@ -11,17 +11,17 @@ var superagentCache = require("superagent-cache-plugin")(cache);
 module.exports = function (homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
-    homebridge.registerAccessory("homebridge-httptemperaturehumidity", "HttpTemphum", HttpTemphum);
+    homebridge.registerAccessory("homebridge-luftdaten", "LuftDaten", LuftDaten);
 }
 
-function HttpTemphum(log, config) {
+function LuftDaten(log, config) {
     this.log = log;
 
     // Configuration
     this.url             = config["url"];
     this.httpMethod      = config["httpMethod"] || "GET";
     this.name            = config["name"];
-    this.manufacturer    = config["manufacturer"] || "Generic";
+    this.manufacturer    = config["manufacturer"] || "Unknown";
     this.model           = config["model"] || "HTTP(S)";
     this.serial          = config["serial"] || "";
     this.humidity        = config["humidity"];
@@ -29,7 +29,7 @@ function HttpTemphum(log, config) {
     this.cacheExpiration = config["cacheExpiration"] || 60;
 }
 
-HttpTemphum.prototype = {
+LuftDaten.prototype = {
 
     getRemoteState: function(service, callback) {
         request(this.httpMethod, this.url)
@@ -43,6 +43,12 @@ HttpTemphum.prototype = {
             } else {
                 this.log(`HTTP success (${key})`);
 
+                this.pm10Service.setCharacteristic(
+                    Characteristic.CurrentTemperature,
+                    JSON.search( res.body, '//sensordatavalues[value_type="P1"]')[0].value
+                );
+                this.pm10 = JSON.search( res.body, '//sensordatavalues[value_type="P1"]')[0].value;
+                    
                 this.temperatureService.setCharacteristic(
                     Characteristic.CurrentTemperature,
                     res.body.temperature
@@ -74,6 +80,10 @@ HttpTemphum.prototype = {
         }.bind(this));
     },
 
+    getPM10State: function(callback) {
+        this.getRemoteState("pm10", callback);
+    },
+
     getTemperatureState: function(callback) {
         this.getRemoteState("temperature", callback);
     },
@@ -91,6 +101,12 @@ HttpTemphum.prototype = {
             .setCharacteristic(Characteristic.Model, this.model)
             .setCharacteristic(Characteristic.SerialNumber, this.serial);
         services.push(informationService);
+
+        this.pm10Service = new Service.TemperatureSensor(this.name);
+        this.pm10Service
+            .getCharacteristic(Characteristic.CurrentPM10)
+            .on("get", this.getPM10State.bind(this));
+        services.push(this.pm10Service);
 
         this.temperatureService = new Service.TemperatureSensor(this.name);
         this.temperatureService

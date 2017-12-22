@@ -1,4 +1,4 @@
-# homebridge-http-temperature-humidity
+# homebridge-luftdaten
 
 A HTTP(S) temperature and humidity accessory for [Homebridge](https://github.com/nfarina/homebridge).
 

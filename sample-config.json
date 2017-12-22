@@ -18,6 +18,14 @@
             "httpMethod": "GET",
             "humidity": true,
             "cacheExpiration": 60
+        }, 
+        {
+            "accessory": "LuftDaten",
+            "name": "Knight who says ni",
+            "url": "http://api.luftdaten.info/v1/sensor/6669",
+            "httpMethod": "GET",
+            "cacheExpiration": 60
         }
+    ]
     ]
 }
